@@ -1,6 +1,7 @@
-import time
 import matplotlib.pyplot as plt
 from matplotlib.widgets import PolygonSelector
+import numpy as np
+from PIL import Image, ImageDraw
 
 def mask_from_polygon(reference_image, invert_selection = False):
 
@@ -16,34 +17,32 @@ def mask_from_polygon(reference_image, invert_selection = False):
 
     handle_props = dict(color="blue")
     props = dict(color="blue")
+    mask_vertices = []
 
+    closed_figure = False
+    def _on_close(event):
+        nonlocal closed_figure
+        closed_figure = True
+    fig.canvas.mpl_connect('close_event', _on_close)
 
     def _polygon_update(verts):
-        print(verts)
-        ax.plot(*list(zip(*verts)),"go")
-        fig.canvas.draw()
-        fig.canvas.flush_events()
-        _polygon_update.verts = verts
+        nonlocal mask_vertices
+        mask_vertices = verts
 
-
-    _polygon_update.verts = []
-
-    poly = PolygonSelector(
+    polygon_selector = PolygonSelector(
         ax, onselect= _polygon_update, handle_props=handle_props, props=props
     )
 
     fig.tight_layout()
     plt.show()
 
-    # xs = [10, 40, 80, 20]
-    # ys = [20,50,60,10]
-    # class Hold:
-    #     pass
-    # event = Hold()
-    # event.button = 1
+    # This loop is necessary in interactive mode for halting the function until
+    # points are selected in the PolygonSelector.
+    while not closed_figure:
+        plt.pause(1)
 
-    # for x,y in zip(xs,ys):
-    #     event.xdata = x
-    #     event.ydata = y
-    #     poly._release(event)
-    return poly
+    img = Image.new("L",reference_image.shape,0)
+    ImageDraw.Draw(img).polygon(mask_vertices,fill=1)
+    mask = np.array(img)
+
+    return mask
