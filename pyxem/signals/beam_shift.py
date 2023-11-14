@@ -28,7 +28,7 @@ class BeamShift(Signal1D):
 
     _signal_type = "beam_shift"
 
-    def make_linear_plane(self, mask=None, use_distance=False):
+    def make_linear_plane(self, mask=None, use_joint_distance=False):
         """Fit linear planes to the beam shifts, which replaces the original data.
 
         In many scanning transmission electron microscopes, the center position of the
@@ -82,8 +82,8 @@ class BeamShift(Signal1D):
             mask = mask.__array__()
             if mask.dtype != bool:
                 raise ValueError("mask needs to be an array of bools")
-        if use_distance:
-            plane_image = pst._get_linear_distance_plane_from_signal2d(self.T, mask=mask)
+        if use_joint_distance:
+            plane_image = pst._get_linear_xy_planes_from_signal2d(self, mask=mask)
         else:
             plane_image_x = pst._get_linear_plane_from_signal2d(s_shift_x, mask=mask)
             plane_image_y = pst._get_linear_plane_from_signal2d(s_shift_y, mask=mask)

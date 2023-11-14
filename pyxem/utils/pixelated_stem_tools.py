@@ -140,7 +140,7 @@ def _distance_residuals(params, X):
     plane_y_xy = params[3:5]
     distance_x = (plane_x_xy * X[:,:2]).sum(axis=1) + params[2]
     distance_y = (plane_y_xy * X[:,:2]).sum(axis=1) + params[5]
-    distance = ((distance_x-X[:,2])**2 + (distance_y-X[:,3])**2)
+    distance = np.sqrt(((distance_x-X[:,2])**2 + (distance_y-X[:,3])**2))
 
     return distance
 
@@ -195,14 +195,15 @@ def _get_linear_plane_from_signal2d(signal, mask=None, initial_values=None):
     plane = _plane_parameters_to_image(p, xaxis, yaxis)
     return plane
 
-def _get_linear_distance_plane_from_signal2d(signal, mask=None, initial_values=None):
-    if len(signal.axes_manager.navigation_axes) != 1:
-        raise ValueError("signal need to have 1 navigation dimension")
-    if len(signal.axes_manager.signal_axes) != 2:
-        raise ValueError("signal need to have 2 signal dimensions")
+def _get_linear_xy_planes_from_signal2d(signal, mask=None, initial_values=None):
+    if len(signal.axes_manager.navigation_axes) != 2:
+        raise ValueError("signal need to have 2 navigation dimensions")
+    if len(signal.axes_manager.signal_axes) != 1:
+        raise ValueError("signal need to have 1 signal dimension")
     if initial_values is None:
         initial_values = [0.1]*6
 
+    signal = signal.T
     sam = signal.axes_manager.signal_axes
     xaxis, yaxis = sam[0].axis, sam[1].axis
     x, y = np.meshgrid(xaxis, yaxis)
@@ -211,8 +212,8 @@ def _get_linear_distance_plane_from_signal2d(signal, mask=None, initial_values=N
     values_y = signal.data[1].flatten()
     points = np.stack((xx, yy, values_x, values_y)).T
     if mask is not None:
-        if mask.__array__().shape != signal.__array__().shape:
-            raise ValueError("signal and mask need to have the same shape")
+        if mask.__array__().shape != signal.T.__array__().shape[:2]:
+            raise ValueError("signal and mask need to have the same navigation shape")
         points = points[np.invert(mask).flatten()]
 
     p = opt.leastsq(_distance_residuals, initial_values, args=points)[0]
