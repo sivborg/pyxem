@@ -62,6 +62,9 @@ class TestMakeLinearPlane:
         s_orig = s.deepcopy()
         s.make_linear_plane()
         np.testing.assert_almost_equal(s.data, s_orig, decimal=7)
+        s = s_orig.deepcopy()
+        s.make_linear_plane(use_joint_distance=True)
+        np.testing.assert_almost_equal(s.data, s_orig, decimal=5)
 
     def test_mask(self):
         data_x, data_y = np.meshgrid(
@@ -78,6 +81,11 @@ class TestMakeLinearPlane:
         s.data[45:50, 36:41, 1] = -100000
         s.make_linear_plane(mask=s_mask)
         np.testing.assert_almost_equal(s.data, s_orig, decimal=7)
+        s = s_orig.deepcopy()
+        s.data[45:50, 36:41, 0] = 100000
+        s.data[45:50, 36:41, 1] = -100000
+        s.make_linear_plane(mask=s_mask, use_joint_distance=True)
+        np.testing.assert_almost_equal(s.data, s_orig, decimal=5)
 
     def test_lazy_input_error(self):
         s = LazyBeamShift(da.zeros((50, 40, 2)))
